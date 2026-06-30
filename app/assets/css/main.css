@@ -1,0 +1,47 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+
+  --color-brand-blue: #004b85;
+  --color-brand-red: #d60019;
+  --color-brand-green: #008452;
+  --color-brand-yellow: #f7ae00;
+  --color-brand-purple: #990099;
+  --color-brand-cyan: #0eadd8;
+  --color-brand-gray: #3b424c;
+  --color-brand-surface: #f5f7fb;
+  --color-brand-border: #d7dee8;
+}
+
+:root {
+  color-scheme: light;
+
+  --ui-bg: #f3f6fb;
+  --ui-bg-muted: #f5f7fb;
+  --ui-bg-elevated: #ffffff;
+  --ui-bg-accented: #f0f4fa;
+
+  --ui-text-dimmed: #94a3b8;
+  --ui-text-muted: #64748b;
+  --ui-text-toned: #475569;
+  --ui-text: #334155;
+  --ui-text-highlighted: #0f172a;
+  --ui-text-inverted: #ffffff;
+
+  --ui-border: var(--color-brand-border);
+  --ui-border-muted: #e2e8f0;
+  --ui-border-accented: #cbd5e1;
+
+  --ui-primary: var(--color-brand-blue);
+}
+
+@utility bg-brand-gradient {
+  background-color: #f3f6fb;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgb(14 173 216 / 0.13), transparent 45%),
+    radial-gradient(circle at 80% 20%, rgb(247 174 0 / 0.13), transparent 45%),
+    linear-gradient(180deg, #fcfdff 0%, #f3f6fb 85%);
+}

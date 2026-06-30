@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+
+model Perfil {
+  id      Int       @id @default(autoincrement())
+  nombre  String    @db.VarChar(50)
+  usuario Usuario[] // Un perfil tiene muchos usuarios
+}
+
+
+model Usuario{
+  email String @id @db.VarChar(100)
+  password String @db.VarChar(60)
+  nombreCompleto String @db.VarChar(100)
+  activo Boolean
+  rol String @db.VarChar(20)
+  perfilId       Int
+  perfil         Perfil    @relation(fields: [perfilId], references: [id])
+  arriendos      Arriendo[] // Un usuario tiene muchos arriendos
+}
+
+
+model TipoVehiculo {
+  id        Int        @id @default(autoincrement())
+  nombre    String     @db.VarChar(50) // Ej: SUV, Sedán
+  vehiculos Vehiculo[] // Un tipo tiene muchos vehículos
+}
+
+model Vehiculo{
+  id      Int    @id @default(autoincrement())
+  modelo String @db.VarChar(20)
+  precio Int @db.Int()
+  estado  String @default("disponible")
+  tipoVehiculoId Int
+  tipo           TipoVehiculo @relation(fields: [tipoVehiculoId], references: [id])
+  arriendos      Arriendo[]   // Un vehículo tiene muchos arriendos
+  descripcion String @db.VarChar(100)
+}
+
+model Arriendo {
+  id          Int      @id @default(autoincrement())
+  fechaInicio DateTime
+  fechaFin    DateTime
+  usuarioEmail String  // Debe coincidir con el tipo del ID del Usuario (String)
+  vehiculoId  Int
+  usuario     Usuario  @relation(fields: [usuarioEmail], references: [email])
+  vehiculo    Vehiculo @relation(fields: [vehiculoId], references: [id])
+  estado       String   @default("vigente")
+  valor Int @default(0)
+// Fechas
+  fechaEntrega    DateTime?
+  fechaRecepcion  DateTime?
+
+  // Fotos (como texto largo para guardar JSON o rutas separadas por coma)
+  fotosEntrega    String?  @db.Text
+  fotosRecepcion  String?  @db.Text
+}
