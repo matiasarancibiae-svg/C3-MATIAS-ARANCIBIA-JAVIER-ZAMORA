@@ -19,6 +19,8 @@ const emit = defineEmits<{
     'borrar-usuario': [usuario: Usuario],
     'ver-detalle': [usuario: Usuario]
 }>()
+
+
 </script>
 
 <template>
@@ -59,11 +61,15 @@ const emit = defineEmits<{
                 <UButton icon="i-lucide-shield-half" variant="soft" size="xs" @click="emit('cambiar-rol', props.usuario)" />
             </UTooltip>
 
-            <UTooltip v-if="!esMismoUsuario && !esUsuarioAdmin && (esAdmin || esEjecutivo)" text="Eliminar usuario">
-                <UButton icon="i-lucide-trash-2" variant="soft" size="xs"
-                    class="rounded-full bg-brand-red/12 text-brand-red"
-                    @click="emit('borrar-usuario', props.usuario)" />
-            </UTooltip>
+            <UTooltip v-if="(esAdmin || esEjecutivo) && !esMismoUsuario" text="Eliminar usuario">
+    <UButton 
+        icon="i-lucide-trash-2" 
+        variant="soft" 
+        size="xs"
+        class="rounded-full bg-brand-red/12 text-brand-red"
+        @click="emit('borrar-usuario', props.usuario)" 
+    />
+</UTooltip>
 
             <UTooltip v-if="!esMismoUsuario && !esUsuarioAdmin && (esAdmin || esEjecutivo)" 
                 :text="props.usuario.activo ? 'Bloquear usuario' : 'Activar usuario'"

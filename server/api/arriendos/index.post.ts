@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
   const vehiculoId = Number(body.vehiculoId);
   // Aquí capturamos el valor. Si no viene, el servidor está ciego.
   const valor = Number(body.valor); 
+  const userName = body.nombre; // Capturamos el nombre enviado desde el frontend
 
   if (!userEmail || !vehiculoId) {
       throw createError({ statusCode: 400, statusMessage: "Faltan datos obligatorios" });
@@ -20,9 +21,11 @@ export default defineEventHandler(async (event) => {
         fechaInicio: new Date(),
         fechaFin: new Date(Date.now() + 86400000),
         usuarioEmail: userEmail,
+        nombre: userName,
         vehiculoId: vehiculoId,
         valor: valor, // <--- Aquí se asigna el valor recibido
         estado: 'vigente'
+        
       }
     }),
     prisma.vehiculo.update({

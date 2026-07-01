@@ -8,4 +8,5 @@ export interface Vehiculo {
     tipoVehiculoId: number; // El ID es un número
     tipo?: TipoVehiculo;    // El objeto relacionado, opcional según el query
     descripcion: string;
+    imagen?: string | null;
 }

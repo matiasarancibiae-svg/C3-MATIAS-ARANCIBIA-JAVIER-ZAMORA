@@ -6,7 +6,7 @@ const isActive = (to: String) => route.path === to
 
 const navLinks = [
     { label: 'Inicio', to: '/' },
-    { label: 'Productos', to: '/productos' },
+    { label: 'Vehiculos', to: '/productos' },
     ...(user.value?.rol === 'Administrador' || user.value?.rol === 'Ejecutivo' 
         ? [{ label: 'Usuarios', to: '/usuarios' }] 
         : [])
@@ -39,10 +39,10 @@ const userMenuItems = [[
                 <div class="flex items-center justify-between gap-4">
                     <div>
                         <p class="text-sm font-semibold uppercase tracking-[0.24em] text-brand-cyan">
-                            Ejemplo de Autenticación
+                            Arriendo de Vehiculos
                         </p>
                         <p class="text-sm font-bold text-brand-blue">
-                            Diseño y Programación Orientada a la Web
+                            
                         </p>
                     </div>
                 </div>

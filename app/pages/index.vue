@@ -5,7 +5,7 @@
 
 
                 <h1 class="max-w-2xl text-4xl font-extrabold tracking-tight text-brand-blue sm:text-5xl">
-                    Demo para autenticación y acceso interno.
+                    En esta pagina podrás arrendar vehiculos.
                 </h1>
 
                 <p class="max-w-2xl text-base leading-7 text-brand-gray/80 sm:text-lg">

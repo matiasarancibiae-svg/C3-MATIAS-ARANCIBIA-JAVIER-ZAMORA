@@ -8,6 +8,8 @@ definePageMeta({
 import type { Usuario } from '../types/usuario'
 
 const { data: usuarios, pending, error, refresh, refresh:refreshUsuarios } = await useFetch<Usuario[]>('/api/usuarios')
+const esAdmin = computed(() => user.value?.rol === 'Administrador')
+const esEjecutivo = computed(() => user.value?.rol === 'Ejecutivo')
 
 /* AGREGAR USUARIO */
 const schemaNuevoUsuario = z.object({
@@ -59,7 +61,6 @@ const formUsuario = ref({
 })
 
 async function guardarUsuario() {
-    // 🔥 VALIDACIÓN NUEVA
     if (!formUsuario.value.perfilId) {
         errorFormAgregar.value = "Debes seleccionar un perfil"
         return
@@ -76,7 +77,7 @@ async function guardarUsuario() {
                 email: formUsuario.value.email,
                 password: formUsuario.value.password,
                 perfilId: formUsuario.value.perfilId,
-                activo: true // 🔥 ESTO FALTABA
+                activo: true 
             }
         })
 
@@ -84,7 +85,7 @@ async function guardarUsuario() {
         await refresh()
     }
     catch (err: any) {
-        console.error(err) // 🔥 PARA DEBUG
+        console.error(err) 
         errorFormAgregar.value = 'No se pudo crear el usuario.' 
     }
     finally {
@@ -309,7 +310,7 @@ async function guardarInspeccion(arriendoId: number) {
                 <UButton @click="abrirReporte" variant="subtle" color="neutral" icon="i-lucide-clipboard-list">
                     Ver Reporte
                 </UButton>
-                <UButton @click="() => mostrarFormAgregar = true" variant="outline" color="neutral" icon="i-heroicons-plus">
+                <UButton v-if="esAdmin"@click="() => mostrarFormAgregar = true" variant="outline" color="neutral" icon="i-heroicons-plus">
                     Agregar Usuario
                 </UButton>
             </div>
@@ -333,7 +334,7 @@ async function guardarInspeccion(arriendoId: number) {
     <BaseFormModal 
         v-model:open="mostrarFormAgregar" 
         title="Agregar Usuario"
-        description="Completa los datos para registrar un nuevo usuario."
+        description="Completa los datos para registrar un nuevo usuario." 
     >
         <div class="space-y-6">
 
@@ -524,4 +525,37 @@ async function guardarInspeccion(arriendoId: number) {
             </div>
         </div>
     </BaseFormModal>
+
+    <BaseFormModal v-model:open="mostrarFormContrasena" title="Cambiar Contraseña">
+    <div class="space-y-4">
+        <p class="text-sm">Usuario: {{ usuarioContrasena?.email }}</p>
+        <UInput v-model="formContrasena.nueva" type="password" placeholder="Nueva contraseña" />
+        <UInput v-model="formContrasena.confirmar" type="password" placeholder="Confirmar contraseña" />
+        <UButton :loading="guardandoContrasena" @click="cambiarContrasena">Guardar</UButton>
+    </div>
+</BaseFormModal>
+
+<BaseFormModal v-model:open="mostrarFormCambiarRol" title="Cambiar Rol">
+    <div class="space-y-4">
+        <p class="text-sm">Usuario: {{ usuarioCambiarRol?.email }}</p>
+        <USelect v-model="formCambiarRol.rol" :options="roles" />
+        <UButton :loading="guardandoCambioRol" @click="cambiarRol">Actualizar Rol</UButton>
+    </div>
+</BaseFormModal>
+
+<BaseFormModal 
+        v-model:open="mostrarConfirmBorrar" 
+        title="Eliminar Usuario"
+        :description="`¿Estás seguro que deseas eliminar permanentemente a ${usuarioBorrar?.nombreCompleto}? Esta acción no se puede deshacer.`"
+    >
+        <div class="flex justify-end gap-3 pt-2">
+            <UButton color="neutral" variant="subtle" @click="cerrarConfirmBorrar">
+                Cancelar
+            </UButton>
+            <UButton color="error" icon="i-lucide-trash-2" :loading="borrandoUsuario" @click="borrarUsuario">
+                Confirmar eliminación
+            </UButton>
+        </div>
+    </BaseFormModal>
+
 </template>

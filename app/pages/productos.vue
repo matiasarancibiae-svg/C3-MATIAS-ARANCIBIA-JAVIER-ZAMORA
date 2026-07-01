@@ -44,14 +44,29 @@ function cerrarFormAgregar() {
 }
 
 async function guardarVehiculo() {
-    guardandoVehiculo.value = true
+    guardandoVehiculo.value = true;
     errorFormAgregar.value = ''
+    
     try {
-        await $fetch('/api/vehiculos', { method: 'POST', body: formNuevoVehiculo })
+        // Creamos una copia limpia para el envío
+        const payload = {
+            modelo: formNuevoVehiculo.modelo,
+            precio: formNuevoVehiculo.precio,
+            descripcion: formNuevoVehiculo.descripcion,
+            tipoVehiculoId: formNuevoVehiculo.tipoVehiculoId,
+            // EXTRAEMOS EL NOMBRE SI ES UN OBJETO
+            imagen: formNuevoVehiculo.imagen?.name || null 
+        }
+
+        await $fetch('/api/vehiculos', { 
+            method: 'POST', 
+            body: payload 
+        })
+        
         cerrarFormAgregar()
         await refreshVehiculos()
     } catch (err: any) {
-        errorFormAgregar.value = 'No se pudo crear el vehículo. Revisa los datos.'
+        errorFormAgregar.value = 'No se pudo crear el vehículo.'
     } finally {
         guardandoVehiculo.value = false
     }
@@ -135,8 +150,9 @@ async function ejecutarArriendo(vehiculo: Vehiculo) {
             body: {
                 vehiculoId: vehiculo.id,
                 usuarioEmail: user.value?.email,
-                // ¡AQUÍ ES DONDE FALTABA! 
-                // Asegúrate de enviar el precio (puede ser vehiculo.precio si existe)
+                nombre: user.value?.nombreCompleto || 'Usuario sin nombre',
+
+
                 valor: vehiculo.precio || 0 
             }
         });
@@ -250,43 +266,54 @@ async function abrirDetalleArriendo(vehiculo: any) {
 
 <template>
     <BaseFormModal v-model:open="mostrarFormAgregar" title="Agregar Vehículo" 
-        description="Completa los datos para registrar un nuevo vehículo en la flota.">
-        <UForm class="space-y-4" :state="formNuevoVehiculo" :schema="schemaNuevoVehiculo" :validate-on="[]"
-            @submit="guardarVehiculo">
-            <UFormField label="Modelo" name="modelo">
-                <UInput v-model="formNuevoVehiculo.modelo" color="neutral" variant="outline" class="w-full"
-                    placeholder="Ej: Toyota Corolla" />
-            </UFormField>
+    description="Completa los datos para registrar un nuevo vehículo en la flota.">
+    
+    <UForm class="space-y-4" :state="formNuevoVehiculo" :schema="schemaNuevoVehiculo">
+        
+        <UFormField label="Modelo" name="modelo">
+            <UInput v-model="formNuevoVehiculo.modelo" color="neutral" variant="outline" class="w-full"
+                placeholder="Ej: Toyota Corolla" />
+        </UFormField>
 
-            <UFormField label="Precio por día" name="precio">
-                <UInput v-model.number="formNuevoVehiculo.precio" type="number" color="neutral" variant="outline"
-                    class="w-full" placeholder="Ej: 25000" />
-            </UFormField>
+        <UFormField label="Precio por día" name="precio">
+            <UInput v-model.number="formNuevoVehiculo.precio" type="number" color="neutral" variant="outline"
+                class="w-full" placeholder="Ej: 25000" />
+        </UFormField>
 
-            <UFormField label="Tipo de Vehículo" name="tipoVehiculoId">
-                <USelect v-model="formNuevoVehiculo.tipoVehiculoId" :items="tipos" label-key="nombre" value-key="id"
-                    placeholder="Selecciona el tipo" class="w-full" />
-            </UFormField>
+        <UFormField label="Tipo de Vehículo" name="tipoVehiculoId">
+            <USelect v-model="formNuevoVehiculo.tipoVehiculoId" :items="tipos" label-key="nombre" value-key="id"
+                placeholder="Selecciona el tipo" class="w-full" />
+        </UFormField>
 
-            <UFormField label="Imagen del Vehículo" name="imagen">
-                <UFileUpload v-model="formNuevoVehiculo.imagen" class="w-96 min-h-48" />
-            </UFormField>
+        <UFormField label="Imagen del Vehículo" name="imagen">
+            <UFileUpload v-model="formNuevoVehiculo.imagen" accept="image/*" class="w-full min-h-48" />
+        </UFormField>
 
-            <UFormField label="Descripción" name="descripcion">
-                <UTextarea v-model="formNuevoVehiculo.descripcion" color="neutral" variant="outline" class="w-full"
-                    placeholder="Breve descripción del vehículo" />
-            </UFormField>
+        <UFormField label="Descripción" name="descripcion">
+            <UTextarea v-model="formNuevoVehiculo.descripcion" color="neutral" variant="outline" class="w-full"
+                placeholder="Breve descripción del vehículo" />
+        </UFormField>
 
-            <UAlert v-if="errorFormAgregar" color="error" variant="soft" icon="i-heroicons-exclamation-circle"
-                :title="errorFormAgregar" />
+        <UAlert v-if="errorFormAgregar" color="error" variant="soft" icon="i-heroicons-exclamation-circle"
+            :title="errorFormAgregar" />
 
-            <div class="flex justify-end gap-3 pt-2">
-                <UButton type="button" color="neutral" variant="subtle" @click="cerrarFormAgregar">Cancelar</UButton>
-                <UButton type="submit" color="neutral" icon="i-heroicons-check" :loading="guardandoVehiculo"
-                    :ui="formBtnCTOUi">Agregar Vehículo</UButton>
-            </div>
-        </UForm>
-    </BaseFormModal>
+        <div class="flex justify-end gap-3 pt-2">
+            <UButton type="button" color="neutral" variant="subtle" @click="cerrarFormAgregar">
+                Cancelar
+            </UButton>
+            
+            <UButton 
+                type="button" 
+                color="neutral" 
+                icon="i-heroicons-check" 
+                :loading="guardandoVehiculo" 
+                @click="guardarVehiculo"
+            >
+                Agregar Vehículo
+            </UButton>
+        </div>
+    </UForm>
+</BaseFormModal>
 
     <BaseFormModal v-model:open="mostrarFormTipo" title="Agregar Tipo de Vehículo">
         <UForm :state="formNuevoTipo" @submit="guardarTipo" class="space-y-4">
@@ -373,6 +400,14 @@ async function abrirDetalleArriendo(vehiculo: any) {
     <!--=======================================================-->
 <BaseFormModal v-if="arriendoSeleccionado" v-model:open="mostrarModalDetalle" title="Detalle del Arriendo">
     <div class="space-y-6">
+        <div class="bg-gray-50 p-4 rounded-lg border">
+            <p class="text-sm font-bold text-gray-700">Información del Cliente:</p>
+            <div class="flex flex-col mt-1">
+                <p class="font-semibold text-lg">{{ arriendoSeleccionado.nombre || 'Nombre no registrado' }}</p>
+                <p class="text-sm text-blue-600 underline">{{ arriendoSeleccionado.usuarioEmail || 'Sin correo' }}</p>
+            </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <p class="text-sm font-bold">Vehículo:</p> 
@@ -388,17 +423,25 @@ async function abrirDetalleArriendo(vehiculo: any) {
             <div>
                 <p class="text-sm font-bold mb-2">Fotos de Entrega:</p>
                 <img v-if="arriendoSeleccionado.fotosEntrega" 
-                     :src="arriendoSeleccionado.fotosEntrega" 
-                     class="rounded border w-full" />
-                <p v-else class="text-gray-400">Sin fotos</p>
+                     :src="`/uploads/${arriendoSeleccionado.fotosEntrega}`" 
+                     class="rounded border w-full h-32 object-cover" />
+                <p v-else class="text-gray-400 italic text-sm">No disponible</p>
+                
+                <p class="text-xs text-gray-500 mt-2">
+                    Enviado el: {{ arriendoSeleccionado.fechaEntrega ? new Date(arriendoSeleccionado.fechaEntrega).toLocaleString() : 'N/A' }}
+                </p>
             </div>
             
             <div>
                 <p class="text-sm font-bold mb-2">Fotos de Recepción:</p>
                 <img v-if="arriendoSeleccionado.fotosRecepcion" 
-                     :src="arriendoSeleccionado.fotosRecepcion" 
-                     class="rounded border w-full" />
-                <p v-else class="text-gray-400">Sin fotos</p>
+                     :src="`/uploads/${arriendoSeleccionado.fotosRecepcion}`" 
+                     class="rounded border w-full h-32 object-cover" />
+                <p v-else class="text-gray-400 italic text-sm">No disponible</p>
+                
+                <p class="text-xs text-gray-500 mt-2">
+                    Recibido el: {{ arriendoSeleccionado.fechaRecepcion ? new Date(arriendoSeleccionado.fechaRecepcion).toLocaleString() : 'N/A' }}
+                </p>
             </div>
         </div>
     </div>
@@ -426,6 +469,17 @@ async function abrirDetalleArriendo(vehiculo: any) {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mx-auto max-w-7xl px-4 rounded-2xl gap-3 py-4">
                 <div v-for="vehiculo in vehiculos" :key="vehiculo.id" 
     class="bg-white rounded-lg shadow-md border border-gray-200 p-4">
+
+    <img 
+        v-if="vehiculo.imagen" 
+        :src="`/uploads/${vehiculo.imagen}`" 
+        :alt="vehiculo.modelo"
+        class="w-full h-48 object-cover rounded" 
+    />
+    
+    <div v-else class="w-full h-48 bg-gray-200 flex items-center justify-center">
+        <span>Sin imagen</span>
+    </div>
     
     <div class="flex justify-between items-start">
         <h2 class="text-xl font-bold">{{ vehiculo.modelo }}</h2>    

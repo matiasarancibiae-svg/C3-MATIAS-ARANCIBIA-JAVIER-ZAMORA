@@ -47,12 +47,14 @@ model Vehiculo{
   tipo           TipoVehiculo @relation(fields: [tipoVehiculoId], references: [id])
   arriendos      Arriendo[]   // Un vehículo tiene muchos arriendos
   descripcion String @db.VarChar(100)
+  imagen      String?  @db.Text
 }
 
 model Arriendo {
   id          Int      @id @default(autoincrement())
   fechaInicio DateTime
   fechaFin    DateTime
+  nombre    String?
   usuarioEmail String  // Debe coincidir con el tipo del ID del Usuario (String)
   vehiculoId  Int
   usuario     Usuario  @relation(fields: [usuarioEmail], references: [email])
