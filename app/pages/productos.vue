@@ -158,11 +158,25 @@ function getEstadoClass(estado: string) {
     }
 }
 // =======================================================0
+import type { Usuario } from '~/types/usuario'
+const props = defineProps<{
+    usuario: Usuario
+}>()
+// --- Lógica de permisos ---
+const esAdmin = computed(() => user.value?.rol === 'Administrador')
+const esEjecutivo = computed(() => user.value?.rol === 'Ejecutivo')
+const esMismoUsuario = computed(() => user.value?.email === props.usuario.email)
+const esUsuarioAdmin = computed(() => props.usuario.rol === 'Administrador')
+
+
+
+// ===================================== Necesario para la imagen =====================
+
 
 </script>
 
 <template>
-    <BaseFormModal v-model:open="mostrarFormAgregar" title="Agregar Vehículo"
+    <BaseFormModal v-model:open="mostrarFormAgregar" title="Agregar Vehículo" 
         description="Completa los datos para registrar un nuevo vehículo en la flota.">
         <UForm class="space-y-4" :state="formNuevoVehiculo" :schema="schemaNuevoVehiculo" :validate-on="[]"
             @submit="guardarVehiculo">
@@ -256,8 +270,8 @@ function getEstadoClass(estado: string) {
                     productos.</p>
             </div>
 
-            <div class="flex gap-3">
-                <UButton @click="mostrarFormTipo = true" variant="outline" color="neutral" icon="i-heroicons-plus"
+            <div class="flex gap-3"  v-if="esAdmin || (esEjecutivo)">
+                <UButton @click="mostrarFormTipo = true" variant="outline" color="neutral" icon="i-heroicons-plus" 
                     :ui="formBtnOutlineCTOUi">Agregar tipo</UButton>
                 <UButton @click="mostrarFormAgregar = true" variant="outline" color="neutral" icon="i-heroicons-plus"
                     :ui="formBtnOutlineCTOUi">Agregar Vehículo</UButton>
@@ -266,7 +280,7 @@ function getEstadoClass(estado: string) {
 
         <section class="w-full">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mx-auto max-w-7xl px-4 rounded-2xl gap-3 py-4">
-                <div v-for="vehiculo in vehiculos" :key="vehiculo.id"
+                <div v-for="vehiculo in vehiculos" :key="vehiculo.id" 
     class="bg-white rounded-lg shadow-md border border-gray-200 p-4">
     
     <div class="flex justify-between items-start">
@@ -298,9 +312,9 @@ function getEstadoClass(estado: string) {
             Arrendar
         </UButton>
 
-        <div class="flex gap-2">
+        <div class="flex gap-2" v-if="esAdmin || (esEjecutivo)">
             <UTooltip text="Eliminar vehículo">
-                <UButton icon="i-lucide-trash-2" variant="soft" size="xs"
+                <UButton icon="i-lucide-trash-2" variant="soft" size="xs" 
                     class="rounded-full bg-brand-red/12 text-brand-red hover:bg-brand-red/24"
                     @click="eliminarVehiculo(vehiculo.id)" />
             </UTooltip>

@@ -9,4 +9,5 @@ export interface Arriendo {
     vehiculoId: number;
     estado: string;
     vehiculo?: Vehiculo; // <--- Esta línea es la que permite que no marque error
+    arriendos: Arriendo[];
 }
