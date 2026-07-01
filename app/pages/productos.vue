@@ -171,8 +171,52 @@ const esUsuarioAdmin = computed(() => props.usuario.rol === 'Administrador')
 
 
 // ===================================== Necesario para la imagen =====================
+// --- Estados ---
+const mostrarModalGestion = ref(false)
+const modoGestion = ref<'entrega' | 'recepcion'>('entrega')
+const procesandoGestion = ref(false)
+const vehiculoEnGestion = ref<Vehiculo | null>(null)
 
+// Formulario unificado
+const formGestionArriendo = reactive({
+    fechaEntrega: '',
+    fotosEntrega: null as File | null,
+    fechaRecepccion: '',
+    fotosRecepccion: null as File | null
+})
 
+// Abrir modal según la acción
+function abrirModalGestion(vehiculo: Vehiculo, modo: 'entrega' | 'recepcion') {
+    vehiculoEnGestion.value = vehiculo
+    modoGestion.value = modo
+    mostrarModalGestion.value = true
+}
+
+// Función única para enviar datos
+async function ejecutarProcesoGestion() {
+    if (!vehiculoEnGestion.value) return
+    
+    procesandoGestion.value = true
+    try {
+        // Enviamos el ID del vehículo y los datos al servidor.
+        // El servidor buscará el arriendo por nosotros.
+        await $fetch(`/api/vehiculos/${vehiculoEnGestion.value.id}/estado`, {
+            method: 'PATCH',
+            body: { 
+                fechaEntrega: modoGestion.value === 'entrega' ? formGestionArriendo.fechaEntrega : undefined,
+                fotosEntrega: modoGestion.value === 'entrega' ? formGestionArriendo.fotosEntrega?.name : undefined,
+                fechaRecepccion: modoGestion.value === 'recepcion' ? formGestionArriendo.fechaRecepccion : undefined,
+                fotosRecepccion: modoGestion.value === 'recepcion' ? formGestionArriendo.fotosRecepccion?.name : undefined
+            }
+        })
+        mostrarModalGestion.value = false
+        await refreshVehiculos()
+    } catch (err) {
+        console.error("Error al procesar:", err)
+    } finally {
+        procesandoGestion.value = false
+    }
+}
 </script>
 
 <template>
@@ -261,6 +305,41 @@ const esUsuarioAdmin = computed(() => props.usuario.rol === 'Administrador')
         </form>
     </BaseFormModal>
 
+    <!-- ================================================ -->
+    <BaseFormModal v-model:open="mostrarModalGestion" :title="modoGestion === 'entrega' ? 'Registrar Entrega' : 'Registrar Recepción'">
+    <UForm :state="formGestionArriendo" @submit="ejecutarProcesoGestion" class="space-y-4">
+        
+        <div v-if="modoGestion === 'entrega'" class="space-y-4">
+            <UFormField label="Fecha de Entrega" name="fechaEntrega">
+                <UInput v-model="formGestionArriendo.fechaEntrega" type="date" class="w-full"></UInput>
+            </UFormField>
+            
+            <UFormField label="Fotos de Entrega" name="fotosEntrega">
+                <UFileUpload v-model="formGestionArriendo.fotosEntrega" class="w-full"></UFileUpload>
+            </UFormField>
+        </div>
+
+        <div v-else class="space-y-4">
+            <UFormField label="Fecha de Recepción" name="fechaRecepccion">
+                <UInput v-model="formGestionArriendo.fechaRecepccion" type="date" class="w-full"></UInput>
+            </UFormField>
+            
+            <UFormField label="Fotos de Recepción" name="fotosRecepccion">
+                <UFileUpload v-model="formGestionArriendo.fotosRecepccion" class="w-full"></UFileUpload>
+            </UFormField>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+            <UButton type="button" color="neutral" variant="subtle" @click="mostrarModalGestion = false">
+                Cancelar
+            </UButton>
+            <UButton type="submit" color="primary" :loading="procesandoGestion">
+                Confirmar {{ modoGestion === 'entrega' ? 'Entrega' : 'Recepción' }}
+            </UButton>
+        </div>
+    </UForm>
+</BaseFormModal>
+
     <div class="space-y-8">
         <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -276,6 +355,7 @@ const esUsuarioAdmin = computed(() => props.usuario.rol === 'Administrador')
                 <UButton @click="mostrarFormAgregar = true" variant="outline" color="neutral" icon="i-heroicons-plus"
                     :ui="formBtnOutlineCTOUi">Agregar Vehículo</UButton>
             </div>
+            
         </section>
 
         <section class="w-full">
@@ -311,6 +391,13 @@ const esUsuarioAdmin = computed(() => props.usuario.rol === 'Administrador')
         >
             Arrendar
         </UButton>
+        <UButton v-if="vehiculo.estado === 'arrendado'" @click="abrirModalGestion(vehiculo, 'entrega')" icon="i-heroicons-truck" variant="soft" color="orange" size="xs">
+        Entrega
+    </UButton>
+
+    <UButton v-if="vehiculo.estado === 'arrendado'" @click="abrirModalGestion(vehiculo, 'recepcion')" icon="i-heroicons-arrow-down-tray" variant="soft" color="green" size="xs">
+        Recepción
+    </UButton>
 
         <div class="flex gap-2" v-if="esAdmin || (esEjecutivo)">
             <UTooltip text="Eliminar vehículo">
