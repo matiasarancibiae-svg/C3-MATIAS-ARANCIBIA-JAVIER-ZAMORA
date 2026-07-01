@@ -194,27 +194,56 @@ function abrirModalGestion(vehiculo: Vehiculo, modo: 'entrega' | 'recepcion') {
 
 // Función única para enviar datos
 async function ejecutarProcesoGestion() {
-    if (!vehiculoEnGestion.value) return
+    if (!vehiculoEnGestion.value) return;
     
-    procesandoGestion.value = true
+    procesandoGestion.value = true;
     try {
-        // Enviamos el ID del vehículo y los datos al servidor.
-        // El servidor buscará el arriendo por nosotros.
+        // Verifica en consola lo que realmente se está enviando
+        const payload = {
+            fechaEntrega: modoGestion.value === 'entrega' ? formGestionArriendo.fechaEntrega : undefined,
+            fotosEntrega: modoGestion.value === 'entrega' ? formGestionArriendo.fotosEntrega?.name : undefined,
+            fechaRecepcion: modoGestion.value === 'recepcion' ? formGestionArriendo.fechaRecepccion : undefined,
+            fotosRecepcion: modoGestion.value === 'recepcion' ? formGestionArriendo.fotosRecepccion?.name : undefined
+        };
+        
+        console.log("Enviando al backend:", payload); // <-- MIRA LA CONSOLA DEL NAVEGADOR
+
         await $fetch(`/api/vehiculos/${vehiculoEnGestion.value.id}/estado`, {
             method: 'PATCH',
-            body: { 
-                fechaEntrega: modoGestion.value === 'entrega' ? formGestionArriendo.fechaEntrega : undefined,
-                fotosEntrega: modoGestion.value === 'entrega' ? formGestionArriendo.fotosEntrega?.name : undefined,
-                fechaRecepccion: modoGestion.value === 'recepcion' ? formGestionArriendo.fechaRecepccion : undefined,
-                fotosRecepccion: modoGestion.value === 'recepcion' ? formGestionArriendo.fotosRecepccion?.name : undefined
-            }
-        })
-        mostrarModalGestion.value = false
-        await refreshVehiculos()
+            body: payload
+        });
+        
+        mostrarModalGestion.value = false;
+        await refreshVehiculos();
     } catch (err) {
-        console.error("Error al procesar:", err)
+        console.error("Error al procesar:", err);
     } finally {
-        procesandoGestion.value = false
+        procesandoGestion.value = false;
+    }
+}
+
+// --- Estados ---
+
+const mostrarModalDetalle = ref(false)
+const arriendoSeleccionado = ref<any>(null)
+
+async function abrirDetalleArriendo(vehiculo: any) {
+    console.log("Clic recibido. ID Vehículo:", vehiculo.id); // ¿Esto sale en consola?
+    
+    try {
+        const data = await $fetch(`/api/vehiculos/${vehiculo.id}/arriendo-activo`);
+        console.log("Datos obtenidos:", data); // ¿Esto sale en consola?
+        
+        if (data) {
+            arriendoSeleccionado.value = data;
+            mostrarModalDetalle.value = true; // Aquí es donde debería abrir
+            console.log("¿El modal debería estar abierto ahora?");
+        } else {
+            alert("No se encontraron datos para este vehículo");
+        }
+    } catch (e) {
+        console.error("Error al cargar:", e);
+        alert("Error al cargar los datos. Mira la consola.");
     }
 }
 </script>
@@ -311,7 +340,7 @@ async function ejecutarProcesoGestion() {
         
         <div v-if="modoGestion === 'entrega'" class="space-y-4">
             <UFormField label="Fecha de Entrega" name="fechaEntrega">
-                <UInput v-model="formGestionArriendo.fechaEntrega" type="date" class="w-full"></UInput>
+                <UInput v-model="formGestionArriendo.fechaEntrega" type="datetime-local" class="w-full"></UInput>
             </UFormField>
             
             <UFormField label="Fotos de Entrega" name="fotosEntrega">
@@ -321,7 +350,7 @@ async function ejecutarProcesoGestion() {
 
         <div v-else class="space-y-4">
             <UFormField label="Fecha de Recepción" name="fechaRecepccion">
-                <UInput v-model="formGestionArriendo.fechaRecepccion" type="date" class="w-full"></UInput>
+                <UInput v-model="formGestionArriendo.fechaRecepccion" type="datetime-local" />
             </UFormField>
             
             <UFormField label="Fotos de Recepción" name="fotosRecepccion">
@@ -338,6 +367,41 @@ async function ejecutarProcesoGestion() {
             </UButton>
         </div>
     </UForm>
+</BaseFormModal>
+
+
+    <!--=======================================================-->
+<BaseFormModal v-if="arriendoSeleccionado" v-model:open="mostrarModalDetalle" title="Detalle del Arriendo">
+    <div class="space-y-6">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm font-bold">Vehículo:</p> 
+                <p>{{ arriendoSeleccionado.vehiculo?.modelo }}</p>
+            </div>
+            <div>
+                <p class="text-sm font-bold">Estado:</p> 
+                <p class="capitalize">{{ arriendoSeleccionado.estado }}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm font-bold mb-2">Fotos de Entrega:</p>
+                <img v-if="arriendoSeleccionado.fotosEntrega" 
+                     :src="arriendoSeleccionado.fotosEntrega" 
+                     class="rounded border w-full" />
+                <p v-else class="text-gray-400">Sin fotos</p>
+            </div>
+            
+            <div>
+                <p class="text-sm font-bold mb-2">Fotos de Recepción:</p>
+                <img v-if="arriendoSeleccionado.fotosRecepcion" 
+                     :src="arriendoSeleccionado.fotosRecepcion" 
+                     class="rounded border w-full" />
+                <p v-else class="text-gray-400">Sin fotos</p>
+            </div>
+        </div>
+    </div>
 </BaseFormModal>
 
     <div class="space-y-8">
@@ -391,13 +455,22 @@ async function ejecutarProcesoGestion() {
         >
             Arrendar
         </UButton>
-        <UButton v-if="vehiculo.estado === 'arrendado'" @click="abrirModalGestion(vehiculo, 'entrega')" icon="i-heroicons-truck" variant="soft" color="orange" size="xs">
+        <UButton v-if="vehiculo.estado === 'arrendado' && (esAdmin || (esEjecutivo))" @click="abrirModalGestion(vehiculo, 'entrega')" icon="i-heroicons-truck" variant="soft" color="orange" size="xs">
         Entrega
     </UButton>
 
-    <UButton v-if="vehiculo.estado === 'arrendado'" @click="abrirModalGestion(vehiculo, 'recepcion')" icon="i-heroicons-arrow-down-tray" variant="soft" color="green" size="xs">
+    <UButton v-if="vehiculo.estado === 'arrendado'  && (esAdmin || (esEjecutivo))" @click="abrirModalGestion(vehiculo, 'recepcion')" icon="i-heroicons-arrow-down-tray" variant="soft" color="green" size="xs">
         Recepción
     </UButton>
+
+    <UButton  v-if="esAdmin || (esEjecutivo)"
+    icon="i-heroicons-eye" 
+    variant="ghost" 
+    size="xs" 
+    @click="abrirDetalleArriendo(vehiculo)">
+    Ver Historial
+</UButton>
+
 
         <div class="flex gap-2" v-if="esAdmin || (esEjecutivo)">
             <UTooltip text="Eliminar vehículo">
